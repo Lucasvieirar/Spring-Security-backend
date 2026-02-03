@@ -1,6 +1,7 @@
 package dev.estudo.security.controller;
 
 import dev.estudo.security.Respository.UserRepository;
+import dev.estudo.security.config.TokenConfig;
 import dev.estudo.security.dto.request.LoginRequest;
 import dev.estudo.security.dto.request.RegisterUserRequest;
 import dev.estudo.security.dto.response.LoginResponse;
@@ -26,13 +27,15 @@ public class AuthController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
+    private final TokenConfig tokenConfig;
 
 
-    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager) {
+    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, TokenConfig tokenConfig) {
 
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
+        this.tokenConfig = tokenConfig;
     }
 
     @PostMapping("/login")
@@ -41,11 +44,15 @@ public class AuthController {
         UsernamePasswordAuthenticationToken userAndPass = new UsernamePasswordAuthenticationToken(request.email(), request.password());
         Authentication authentication = authenticationManager.authenticate(userAndPass);
 
+        User user = (User) authentication.getPrincipal();
+        assert user != null;
+        String token = tokenConfig.generateToken(user);
+        return ResponseEntity.ok(new LoginResponse(token));
 
 
-        return null;
+
     }
-
+    @PostMapping("/register")
     public ResponseEntity<RegisterUserResponse> register(@Valid @RequestBody RegisterUserRequest request){
         User newUser = new User();
         newUser.setPassword(passwordEncoder.encode(request.password()));
