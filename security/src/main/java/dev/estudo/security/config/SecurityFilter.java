@@ -5,6 +5,10 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.util.Strings;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.context.SecurityContextImpl;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -29,14 +33,16 @@ public class SecurityFilter extends OncePerRequestFilter {
             Optional<JWTUserData> optUser = tokenConfig.validateToken(token);
             if (optUser.isPresent()){
 
-                JWTUserData = optUser.get();
+                JWTUserData userData = optUser.get();
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userData.userId(), null, null);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
 
+            }
+            filterChain.doFilter(request, response);
 
-                filterChain.doFilter(request, response);
-            }
-            else {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-            }
+        }
+        else {
+            filterChain.doFilter(request,response);
         }
     }
 }
